@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BizChain Map — Алла Пашкова · Трихолог</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#1db87a; --green2:#0fa85e;
+  --yellow:#e8a308; --red:#e04848;
+  --blue:#2196f3; --purple:#7c3aed; --teal:#0d9488; --amber:#d97706;
+  --bg:#eef4f0; --card:rgba(255,255,255,0.80);
+  --text:#1a2820; --text2:#4a6556; --text3:#8aab97;
+  --border:rgba(29,184,122,0.1); --shadow:rgba(0,0,0,0.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+canvas#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.page{position:relative;z-index:1;max-width:1220px;margin:0 auto;padding:28px 20px 60px}
+
+/* ── HEADER ── */
+.hdr{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:22px}
+.logo-wrap{display:flex;align-items:center;gap:8px}
+.logo-circle{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1db87a,#2196f3);display:flex;align-items:center;justify-content:center;font-size:13px}
+.logo-text{font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--text2)}
+.map-title{font-family:'Unbounded',sans-serif;font-weight:700;font-size:28px;background:linear-gradient(135deg,#1db87a,#06b6d4,#2196f3);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 4s ease-in-out infinite}
+@keyframes gradShift{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
+.ai-badge{display:flex;align-items:center;gap:5px;background:rgba(29,184,122,.1);border:1px solid rgba(29,184,122,.2);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:700;color:var(--green2);letter-spacing:.08em}
+.orb{width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#4ade80,#1db87a);box-shadow:0 0 8px rgba(29,184,122,.5);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}}
+.sub-title{font-size:12.5px;color:var(--text2);font-weight:500}
+
+/* ── TRANSFORMATION BANNER ── */
+.transform-banner{background:linear-gradient(135deg,rgba(29,184,122,.12),rgba(33,150,243,.08));border:1.5px solid rgba(29,184,122,.25);border-radius:18px;padding:22px 28px;margin-bottom:18px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;box-shadow:0 4px 24px rgba(29,184,122,.08)}
+.tb-left{}
+.tb-eyebrow{font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--green2);text-transform:uppercase;margin-bottom:8px}
+.tb-big{font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;color:var(--green2);line-height:1;margin-bottom:6px}
+.tb-sub{font-size:13px;color:var(--text2);font-weight:500}
+.tb-pills{display:flex;gap:10px;flex-wrap:wrap}
+.tb-pill{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 14px;text-align:center;backdrop-filter:blur(10px)}
+.tb-pill b{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;display:block;line-height:1.1}
+.tb-pill span{font-size:10px;color:var(--text2);font-weight:500}
+.tb-pill.warn b{color:var(--red)}
+.tb-pill.good b{color:var(--green2)}
+.tb-pill.blue b{color:var(--blue)}
+
+/* ── GOAL PANEL ── */
+.goal-panel{background:var(--card);backdrop-filter:blur(16px);border:1px solid rgba(29,184,122,.15);border-radius:13px;padding:12px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(29,184,122,.05);flex-wrap:wrap}
+.goal-lbl{font-family:'Unbounded',sans-serif;font-size:9.5px;font-weight:700;color:var(--green2);letter-spacing:.08em;white-space:nowrap}
+.goal-vals{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.goal-vals b{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green2)}
+.goal-sep{color:var(--text3)}
+
+/* ── STATS ── */
+.stats{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center}
+.stat{background:var(--card);backdrop-filter:blur(8px);border-radius:9px;padding:7px 14px;display:flex;align-items:center;gap:6px;border:1px solid var(--border);font-size:11.5px}
+.stat-dot{width:8px;height:8px;border-radius:50%}
+.stat b{font-family:'JetBrains Mono',monospace;font-weight:700}
+
+/* ── CHAIN ROW ── */
+.chain-row{display:flex;align-items:center;background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:16px;padding:11px 14px;margin-bottom:9px;box-shadow:0 1px 3px var(--shadow),0 4px 16px rgba(29,184,122,.04);transition:transform .2s,box-shadow .2s;animation:fadeUp .5s ease both}
+.chain-row:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(29,184,122,.09)}
+.chain-label{width:128px;flex-shrink:0;margin-right:14px}
+.chain-name{font-family:'Unbounded',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.06em;margin-bottom:3px}
+.chain-pct{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);font-weight:600}
+.chain-bar{height:3px;border-radius:2px;width:84px;margin-top:4px}
+.steps{display:flex;align-items:center;gap:5px;flex:1;flex-wrap:wrap}
+
+/* ── STEP ── */
+.step{position:relative;min-width:88px;max-width:112px;padding:8px 9px 14px;border-radius:11px;cursor:pointer;transition:transform .2s,box-shadow .2s;border:1px solid transparent;overflow:hidden}
+.step::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.45)45%,rgba(255,255,255,.65)50%,rgba(255,255,255,.45)55%,transparent 60%);opacity:0;pointer-events:none}
+.step:hover::after{opacity:1;animation:shimmer 1.4s ease-in-out}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(220%)}}
+.step.full{background:linear-gradient(160deg,rgba(29,184,122,.1),rgba(29,184,122,.04));border-color:rgba(29,184,122,.22)}
+.step.boost{background:linear-gradient(160deg,rgba(232,163,8,.1),rgba(232,163,8,.04));border-color:rgba(232,163,8,.22)}
+.step.human{background:linear-gradient(160deg,rgba(224,72,72,.08),rgba(224,72,72,.03));border-color:rgba(224,72,72,.18)}
+.step:hover{transform:translateY(-4px)}
+.step.full:hover{box-shadow:0 8px 24px rgba(29,184,122,.2)}
+.step.boost:hover{box-shadow:0 8px 24px rgba(232,163,8,.16)}
+.step.human:hover{box-shadow:0 8px 24px rgba(224,72,72,.12)}
+.step-name{font-size:10.5px;font-weight:600;line-height:1.3;color:var(--text)}
+.step-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;flex-shrink:0;margin-bottom:-1px}
+.step-dot.full{background:var(--green);box-shadow:0 0 5px rgba(29,184,122,.55)}
+.step-dot.boost{background:var(--yellow);box-shadow:0 0 5px rgba(232,163,8,.55)}
+.step-dot.human{background:var(--red);box-shadow:0 0 5px rgba(224,72,72,.45)}
+.agent-badge{position:absolute;bottom:2px;right:3px;font-size:7.5px;font-weight:700;background:rgba(33,150,243,.12);border:1px solid rgba(33,150,243,.25);border-radius:5px;padding:1px 3px;color:var(--blue);white-space:nowrap}
+
+/* ── ДЫРА ── */
+.step.hole{border-style:dashed;border-width:1.5px}
+.step.hole.full{border-color:rgba(29,184,122,.35)}
+.step.hole.boost{border-color:rgba(232,163,8,.4)}
+.hole-alert{position:absolute;top:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:7.5px;font-weight:700;background:#e04848;color:#fff;border-radius:5px;padding:1.5px 5px;animation:alertPulse 2s ease-in-out infinite;pointer-events:none;z-index:10}
+@keyframes alertPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,72,72,.5);transform:translateX(-50%) scale(1)}50%{box-shadow:0 0 0 4px rgba(224,72,72,0);transform:translateX(-50%) scale(1.04)}}
+.hole-loss{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:7px;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace}
+
+/* ── ARROWS ── */
+.arrow{display:flex;align-items:center;margin:0 1px;flex-shrink:0}
+.arrow svg{width:20px;height:14px}
+
+/* ── CONNECTIONS ── */
+.conn-section{margin:20px 0 16px}
+.sec-title{font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-bottom:10px}
+.conns{display:flex;gap:8px;flex-wrap:wrap}
+.conn-pill{background:rgba(255,255,255,.62);backdrop-filter:blur(8px);border:1px solid rgba(29,184,122,.1);border-radius:10px;padding:7px 12px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.conn-pill:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.conn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── BRANCHES ── */
+.branches-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:9px;margin-bottom:20px}
+.branch-card{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:13px;padding:11px 14px;cursor:pointer;transition:transform .2s}
+.branch-card:hover{transform:translateY(-2px)}
+.b-num{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);font-weight:600;margin-bottom:3px}
+.b-name{font-weight:700;font-size:12px;margin-bottom:3px;color:var(--text)}
+.b-pot{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:700;color:var(--green2)}
+.b-time{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* ── CHAIN POTENTIAL ── */
+.chain-pot{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px}
+.cp{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:9px 11px;text-align:center}
+.cp-name{font-family:'Unbounded',sans-serif;font-size:8px;font-weight:700;letter-spacing:.06em;margin-bottom:5px}
+.cp-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700}
+.cp-lbl{font-size:9px;color:var(--text3);margin-top:1px}
+
+/* ── QUICK WINS ── */
+.qw-section{margin:24px 0 20px}
+.qw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:10px}
+.qw-card{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden}
+.qw-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.qw-card:nth-child(1)::before{background:linear-gradient(90deg,#e04848,#f97316)}
+.qw-card:nth-child(2)::before{background:linear-gradient(90deg,#1db87a,#06b6d4)}
+.qw-card:nth-child(3)::before{background:linear-gradient(90deg,#2196f3,#7c3aed)}
+.qw-week{font-family:'Unbounded',sans-serif;font-size:8.5px;font-weight:700;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+.qw-title{font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--text)}
+.qw-action{font-size:11.5px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.qw-bot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.qw-pot{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12.5px;color:var(--green2)}
+.qw-time{font-size:10.5px;color:var(--text3);background:rgba(0,0,0,.03);border:1px solid var(--border);border-radius:6px;padding:2px 7px}
+.qw-urgent{background:rgba(224,72,72,.06);border-color:rgba(224,72,72,.2)}
+.qw-urgent .qw-week{color:var(--red)}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.leg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2)}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.leg-dot.full{background:var(--green);box-shadow:0 0 5px rgba(29,184,122,.5)}
+.leg-dot.boost{background:var(--yellow);box-shadow:0 0 5px rgba(232,163,8,.5)}
+.leg-dot.human{background:var(--red);box-shadow:0 0 5px rgba(224,72,72,.4)}
+.leg-hole{border:1.5px dashed rgba(224,72,72,.5);padding:1px 8px;border-radius:5px;font-size:10.5px;color:var(--red)}
+
+.disclaimer{margin-top:16px;border:1px solid rgba(232,163,8,.3);background:rgba(232,163,8,.04);border-radius:9px;padding:9px 14px;font-size:10.5px;color:var(--text2)}
+
+/* ── ANIMATIONS ── */
+.chain-row:nth-child(1){animation-delay:.05s}
+.chain-row:nth-child(2){animation-delay:.1s}
+.chain-row:nth-child(3){animation-delay:.15s}
+.chain-row:nth-child(4){animation-delay:.2s}
+.chain-row:nth-child(5){animation-delay:.25s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.overlay.show{display:flex}
+.modal{background:rgba(255,255,255,.93);backdrop-filter:blur(22px);border:1px solid rgba(29,184,122,.13);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,.1);width:100%;max-width:560px;max-height:86vh;overflow-y:auto;animation:mIn .24s ease}
+@keyframes mIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-hdr{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.mbadge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;margin-bottom:5px}
+.mbadge.full{background:rgba(29,184,122,.12);color:var(--green2)}
+.mbadge.boost{background:rgba(232,163,8,.12);color:var(--yellow)}
+.mbadge.human{background:rgba(224,72,72,.1);color:var(--red)}
+.mtitle{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:700;line-height:1.3}
+.mclose{background:none;border:none;cursor:pointer;color:var(--text3);font-size:20px;line-height:1;flex-shrink:0;padding:2px 6px;border-radius:6px;transition:background .2s}
+.mclose:hover{background:rgba(0,0,0,.06)}
+.mbody{padding:0 20px 20px}
+.mchain{font-size:11px;color:var(--text3);margin-top:10px}
+.mdesc{font-size:13px;color:var(--text2);line-height:1.65;margin-top:7px}
+.mquote{font-size:12.5px;font-style:italic;color:var(--text2);padding:8px 12px;margin:8px 0;border-left:3px solid var(--green);background:rgba(29,184,122,.04);border-radius:0 8px 8px 0}
+.msrc{font-size:10.5px;color:var(--text3)}
+.msec{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:16px 0 8px;padding-top:12px;border-top:1px solid var(--border)}
+.munit{padding:10px 12px;background:rgba(0,0,0,.02);border-radius:10px}
+.mu-row{font-size:12.5px;color:var(--text2);padding:3px 0;display:flex;gap:7px}
+.mu-row.hi{font-weight:600;color:var(--green2)}
+.mai{padding:10px 12px;border-radius:10px;margin-top:2px}
+.mai.full{background:rgba(29,184,122,.06);border-left:3px solid var(--green)}
+.mai.boost{background:rgba(232,163,8,.06);border-left:3px solid var(--yellow)}
+.mai.human{background:rgba(224,72,72,.05);border-left:3px solid var(--red)}
+.mai-t{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.mai-txt{font-size:12.5px;color:var(--text2);line-height:1.65}
+.magent{padding:10px 12px;background:rgba(33,150,243,.05);border-radius:10px}
+.magent-name{font-weight:700;font-size:13.5px;color:var(--text);margin-bottom:3px}
+.magent-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.magent-mod{font-size:11px;color:var(--blue);margin-top:5px;font-weight:600}
+.mbranch{padding:10px 12px;background:rgba(29,184,122,.05);border-radius:10px}
+.mbranch-name{font-weight:700;font-size:13.5px;color:var(--green2)}
+.mbranch-pot{font-family:'JetBrains Mono',monospace;font-size:13px;margin:3px 0}
+.mbranch-link{font-size:12px;color:var(--text2);line-height:1.6}
+.mtool{padding:10px 12px;background:rgba(124,58,237,.04);border-radius:10px;border-left:3px solid var(--purple)}
+.mtool-name{font-weight:700;font-size:13.5px;color:var(--purple)}
+.mtool-steps{font-size:12px;color:var(--text2);line-height:1.7;margin:5px 0}
+.mtool-time{font-size:11px;color:var(--text3)}
+.mgoal{padding:10px 12px}
+.mgoal-name{font-weight:700;font-size:13px;margin-bottom:8px}
+.mgoal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mgoal-b,.mgoal-a{padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.5}
+.mgoal-b{background:rgba(224,72,72,.05);color:var(--red)}
+.mgoal-a{background:rgba(29,184,122,.05);color:var(--green2)}
+.mgoal-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.mlinks{display:flex;flex-direction:column;gap:8px}
+.ml{display:flex;align-items:flex-start;gap:9px;font-size:12px;color:var(--text2)}
+.ml-dot{width:9px;height:9px;border-radius:50%;margin-top:3px;flex-shrink:0;box-shadow:0 0 6px currentColor}
+.ml-lbl{font-weight:700;font-size:11px;margin-bottom:1px}
+.ml-sub{font-size:10px;color:var(--text3)}
+
+@media(max-width:900px){.qw-grid{grid-template-columns:1fr}.chain-pot{grid-template-columns:repeat(3,1fr)}.tb-pills{flex-direction:column}.transform-banner{grid-template-columns:1fr}}
+@media(max-width:600px){.steps{flex-wrap:wrap}.step{min-width:78px}.chain-label{width:100px;margin-right:8px}.chain-pot{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="page">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo-wrap">
+    <div class="logo-circle">🧠</div>
+    <div class="logo-text">ИИЩЕНКО LAB</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="map-title">BizChain Map</div>
+    <div class="ai-badge"><div class="orb"></div> AI AUDIT</div>
+  </div>
+  <div class="sub-title">Алла Пашкова · Врач-трихолог / дерматовенеролог · Благовещенск · Март 2026</div>
+</div>
+
+<!-- ══ TRANSFORMATION BANNER ══ -->
+<div class="transform-banner">
+  <div class="tb-left">
+    <div class="tb-eyebrow">🎯 Потенциал трансформации бизнеса</div>
+    <div class="tb-big">+5–15 млн ₽/год</div>
+    <div class="tb-sub">При запуске 6 веток с ИИ-агентами · 80% бизнеса автоматизируемо · 5 дыр стоят <b style="color:var(--red)">~350К ₽/мес</b> прямо сейчас</div>
+  </div>
+  <div class="tb-pills">
+    <div class="tb-pill good"><b>80%</b><span>ИИ-потенциал</span></div>
+    <div class="tb-pill warn"><b>5</b><span>активных дыр</span></div>
+    <div class="tb-pill warn"><b>−350К</b><span>₽/мес потери</span></div>
+    <div class="tb-pill blue"><b>1 нед</b><span>до первого эффекта</span></div>
+  </div>
+</div>
+
+<!-- GOAL PANEL -->
+<div class="goal-panel">
+  <div class="goal-lbl">🎯 ЦЕЛЬ</div>
+  <div class="goal-vals">
+    <span><b>30+</b> пациентов/нед</span>
+    <span class="goal-sep">•</span>
+    <span>Чек <b>7 500 ₽</b></span>
+    <span class="goal-sep">•</span>
+    <span>Выручка <b>2+ млн</b>/мес</span>
+    <span class="goal-sep">•</span>
+    <span><b>2</b> онлайн-курса</span>
+    <span class="goal-sep">•</span>
+    <span><b>Федеральный</b> медийный бренд</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-dot" style="background:var(--green);box-shadow:0 0 5px rgba(29,184,122,.5)"></div>Зелёных <b>12</b> — ИИ сам</div>
+  <div class="stat"><div class="stat-dot" style="background:var(--yellow);box-shadow:0 0 5px rgba(232,163,8,.5)"></div>Жёлтых <b>8</b> — ИИ ускоряет</div>
+  <div class="stat"><div class="stat-dot" style="background:var(--red);box-shadow:0 0 5px rgba(224,72,72,.4)"></div>Красных <b>5</b> — Врач незаменим</div>
+  <div class="stat" style="border-color:rgba(224,72,72,.25)"><div class="stat-dot" style="background:transparent;border:1.5px dashed var(--red)"></div>Дыр <b style="color:var(--red)">5</b> — не делается</div>
+</div>
+
+<!-- ВЕТКИ РОСТА -->
+<div class="sec-title" style="margin-bottom:10px">🚀 ВЕТКИ РОСТА — куда идут агенты</div>
+<div class="branches-grid">
+  <div class="branch-card"><div class="b-num">ВЕТКА 1</div><div class="b-name">📚 Онлайн-образование</div><div class="b-pot">+2–6 млн ₽/год</div><div class="b-time">Старт: 1–3 мес</div></div>
+  <div class="branch-card"><div class="b-num">ВЕТКА 2</div><div class="b-name">✍️ Контент-машина</div><div class="b-pot">+0,5–1,5 млн ₽/год</div><div class="b-time">Старт: 1–2 нед</div></div>
+  <div class="branch-card"><div class="b-num">ВЕТКА 3</div><div class="b-name">⭐ Репутация / отзывы</div><div class="b-pot">+0,7–1,5 млн ₽/год</div><div class="b-time">Старт: 1 нед ← сейчас</div></div>
+  <div class="branch-card"><div class="b-num">ВЕТКА 4</div><div class="b-name">⚙️ CRM + Онлайн-запись</div><div class="b-pot">+0,4–0,8 млн ₽/год</div><div class="b-time">Старт: 2–4 нед</div></div>
+  <div class="branch-card"><div class="b-num">ВЕТКА 5</div><div class="b-name">🤝 B2B-партнёрства</div><div class="b-pot">+0,6–2 млн ₽/год</div><div class="b-time">Старт: 2–6 нед</div></div>
+  <div class="branch-card"><div class="b-num">ВЕТКА 6</div><div class="b-name">📡 Медийный бренд</div><div class="b-pot">+1–4 млн ₽/год</div><div class="b-time">Старт: 2–3 мес</div></div>
+</div>
+
+<!-- ══ ЦЕПОЧКИ ══ -->
+
+<!-- ПРИВЛЕЧЕНИЕ -->
+<div class="chain-row">
+  <div class="chain-label">
+    <div class="chain-name" style="color:#1db87a">ПРИВЛЕЧЕНИЕ</div>
+    <div class="chain-pct">→ 20% Instagram · 40% сарафан</div>
+    <div class="chain-bar" style="background:linear-gradient(90deg,#4ade80,#1db87a,#06b6d4)"></div>
+  </div>
+  <div class="steps">
+    <div class="step full" onclick="openModal('a1')">
+      <span class="step-dot full"></span><span class="step-name">Публикует посты</span>
+      <div class="agent-badge">🤖 КП</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(29,184,122,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#1db87a" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full" onclick="openModal('a2')">
+      <span class="step-dot full"></span><span class="step-name">2ГИС / Карты</span>
+      <div class="agent-badge">🤖 МУ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(29,184,122,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#1db87a" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2.3s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full" onclick="openModal('a3')">
+      <span class="step-dot full"></span><span class="step-name">Директ 24/7</span>
+      <div class="agent-badge">🤖 АВ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(232,163,8,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#e8a308" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="1.8s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost" onclick="openModal('a4')">
+      <span class="step-dot boost"></span><span class="step-name">Квалифицирует</span>
+      <div class="agent-badge">🤖 АВ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(232,163,8,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#e8a308" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2.1s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost hole" onclick="openModal('a5')">
+      <div class="hole-alert">⚠ ДЫРА</div>
+      <span class="step-dot boost"></span><span class="step-name">Прогрев-воронка</span>
+      <div class="hole-loss">−50К ₽/мес</div>
+      <div class="agent-badge">🤖 АВ</div>
+    </div>
+  </div>
+</div>
+
+<!-- ПРОДАЖА -->
+<div class="chain-row">
+  <div class="chain-label">
+    <div class="chain-name" style="color:#a78bfa">ПРОДАЖА</div>
+    <div class="chain-pct">→ 30% теряет на «дорого»</div>
+    <div class="chain-bar" style="background:linear-gradient(90deg,#a78bfa,#7c3aed,#ec4899)"></div>
+  </div>
+  <div class="steps">
+    <div class="step full" onclick="openModal('b1')">
+      <span class="step-dot full"></span><span class="step-name">Входящий запрос</span>
+      <div class="agent-badge">🤖 АВ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(167,139,250,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#a78bfa" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost" onclick="openModal('b2')">
+      <span class="step-dot boost"></span><span class="step-name">Работа с «дорого»</span>
+      <div class="agent-badge">🤖 СП</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(167,139,250,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#a78bfa" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="1.7s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full hole" onclick="openModal('b3')">
+      <div class="hole-alert">⚠ ДЫРА</div>
+      <span class="step-dot full"></span><span class="step-name">Онлайн-запись</span>
+      <div class="hole-loss">−80К ₽/мес</div>
+      <div class="agent-badge">🤖 АВ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(167,139,250,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#a78bfa" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2.4s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full" onclick="openModal('b4')">
+      <span class="step-dot full"></span><span class="step-name">Напоминает о визите</span>
+      <div class="agent-badge">🤖 МУ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(224,72,72,.2)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#e04848" opacity=".6"><animate attributeName="cx" from="1" to="17" dur="2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step human" onclick="openModal('b5')">
+      <span class="step-dot human"></span><span class="step-name">Оплата / встреча</span>
+    </div>
+  </div>
+</div>
+
+<!-- ИСПОЛНЕНИЕ -->
+<div class="chain-row">
+  <div class="chain-label">
+    <div class="chain-name" style="color:#f59e0b">ИСПОЛНЕНИЕ</div>
+    <div class="chain-pct">→ 80% возвращаемость</div>
+    <div class="chain-bar" style="background:linear-gradient(90deg,#fbbf24,#e8a308,#f97316)"></div>
+  </div>
+  <div class="steps">
+    <div class="step human" onclick="openModal('c1')">
+      <span class="step-dot human"></span><span class="step-name">Приём / анамнез</span>
+      <div class="agent-badge">🤖 АО</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(224,72,72,.2)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#e04848" opacity=".6"><animate attributeName="cx" from="1" to="17" dur="2.2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full" onclick="openModal('c2')" style="border-color:rgba(29,184,122,.4)">
+      <span style="position:absolute;top:2px;right:2px;font-size:7px;background:var(--green2);color:#fff;border-radius:4px;padding:1px 4px;font-weight:700">✓ РАБОТАЕТ</span>
+      <span class="step-dot full"></span><span class="step-name">Биоимпеданс ИИ</span>
+      <div class="agent-badge">🤖 АО</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(224,72,72,.2)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#e04848" opacity=".6"><animate attributeName="cx" from="1" to="17" dur="1.9s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step human" onclick="openModal('c3')">
+      <span class="step-dot human"></span><span class="step-name">Диагноз / план</span>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(224,72,72,.2)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#e04848" opacity=".6"><animate attributeName="cx" from="1" to="17" dur="2.5s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step human" onclick="openModal('c4')">
+      <span class="step-dot human"></span><span class="step-name">Процедуры / лечение</span>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(232,163,8,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#e8a308" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost" onclick="openModal('c5')">
+      <span class="step-dot boost"></span><span class="step-name">Документация</span>
+      <div class="agent-badge">🤖 АО</div>
+    </div>
+  </div>
+</div>
+
+<!-- КОНТЕНТ -->
+<div class="chain-row">
+  <div class="chain-label">
+    <div class="chain-name" style="color:#2196f3">КОНТЕНТ</div>
+    <div class="chain-pct">→ 10–14 ч/нед · главный пожиратель</div>
+    <div class="chain-bar" style="background:linear-gradient(90deg,#60a5fa,#2196f3,#06b6d4)"></div>
+  </div>
+  <div class="steps">
+    <div class="step boost" onclick="openModal('d1')">
+      <span class="step-dot boost"></span><span class="step-name">Контент-план</span>
+      <div class="agent-badge">🤖 ГА</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(33,150,243,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#2196f3" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full" onclick="openModal('d2')">
+      <span class="step-dot full"></span><span class="step-name">Пишет посты</span>
+      <div class="agent-badge">🤖 КП</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(33,150,243,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#2196f3" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="1.8s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost" onclick="openModal('d3')">
+      <span class="step-dot boost"></span><span class="step-name">Сценарий Reels</span>
+      <div class="agent-badge">🤖 КП</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(33,150,243,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#2196f3" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2.3s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost" onclick="openModal('d4')">
+      <span class="step-dot boost"></span><span class="step-name">Статьи / портал</span>
+      <div class="agent-badge">🤖 КП</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(33,150,243,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#2196f3" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2.1s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost hole" onclick="openModal('d5')">
+      <div class="hole-alert">⚠ ДЫРА</div>
+      <span class="step-dot boost"></span><span class="step-name">Подкаст / YouTube</span>
+      <div class="hole-loss">−100К ₽/мес</div>
+      <div class="agent-badge">🤖 ГА</div>
+    </div>
+  </div>
+</div>
+
+<!-- УДЕРЖАНИЕ -->
+<div class="chain-row">
+  <div class="chain-label">
+    <div class="chain-name" style="color:#f87171">УДЕРЖАНИЕ</div>
+    <div class="chain-pct">→ 3 дыры · база не работает</div>
+    <div class="chain-bar" style="background:linear-gradient(90deg,#f87171,#e04848,#f97316)"></div>
+  </div>
+  <div class="steps">
+    <div class="step full hole" onclick="openModal('e1')">
+      <div class="hole-alert">⚠ ДЫРА</div>
+      <span class="step-dot full"></span><span class="step-name">Запрос отзыва</span>
+      <div class="hole-loss">−70К ₽/мес</div>
+      <div class="agent-badge">🤖 МУ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(248,113,113,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#f87171" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full hole" onclick="openModal('e2')">
+      <div class="hole-alert">⚠ ДЫРА</div>
+      <span class="step-dot full"></span><span class="step-name">Рассылка базы</span>
+      <div class="hole-loss">−50К ₽/мес</div>
+      <div class="agent-badge">🤖 МУ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(248,113,113,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#f87171" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2.2s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step full" onclick="openModal('e3')">
+      <span class="step-dot full"></span><span class="step-name">Напоминание о визите</span>
+      <div class="agent-badge">🤖 МУ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(248,113,113,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#f87171" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="1.9s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost" onclick="openModal('e4')">
+      <span class="step-dot boost"></span><span class="step-name">Допродажа / курсы</span>
+      <div class="agent-badge">🤖 МУ</div>
+    </div>
+    <div class="arrow"><svg viewBox="0 0 20 14" fill="none"><line x1="1" y1="7" x2="17" y2="7" stroke="rgba(248,113,113,.25)" stroke-width="1.5"/><circle cy="7" r="2.2" fill="#f87171" opacity=".7"><animate attributeName="cx" from="1" to="17" dur="2.4s" repeatCount="indefinite"/></circle></svg></div>
+    <div class="step boost hole" onclick="openModal('e5')">
+      <div class="hole-alert">⚠ ДЫРА</div>
+      <span class="step-dot boost"></span><span class="step-name">Рекомендации</span>
+      <div class="agent-badge">🤖 МУ</div>
+    </div>
+  </div>
+</div>
+
+<!-- ПЕРЕПЛЕТЕНИЯ -->
+<div class="conn-section">
+  <div class="sec-title">⚡ ПЕРЕПЛЕТЕНИЯ ЦЕПОЧЕК</div>
+  <div class="conns">
+    <div class="conn-pill" onclick="openConnModal('c12')"><div class="conn-dot" style="background:#0d9488;box-shadow:0 0 5px #0d9488"></div>Продажа → Исполнение</div>
+    <div class="conn-pill" onclick="openConnModal('c23')"><div class="conn-dot" style="background:#7c3aed;box-shadow:0 0 5px #7c3aed"></div>Исполнение → Контент</div>
+    <div class="conn-pill" onclick="openConnModal('c24')"><div class="conn-dot" style="background:#d97706;box-shadow:0 0 5px #d97706"></div>Исполнение → Удержание</div>
+    <div class="conn-pill" onclick="openConnModal('c31')"><div class="conn-dot" style="background:#2196f3;box-shadow:0 0 5px #2196f3"></div>Контент → Привлечение</div>
+    <div class="conn-pill" onclick="openConnModal('c41')"><div class="conn-dot" style="background:#f97316;box-shadow:0 0 5px #f97316"></div>Удержание → Привлечение</div>
+    <div class="conn-pill" onclick="openConnModal('c_union')"><div class="conn-dot" style="background:#ec4899;box-shadow:0 0 5px #ec4899"></div>«Юнион» → Привлечение</div>
+  </div>
+</div>
+
+<!-- ПОТЕНЦИАЛ ПО ЦЕПОЧКАМ -->
+<div class="sec-title" style="margin-bottom:10px">📊 ПОТЕНЦИАЛ ПО ЦЕПОЧКАМ</div>
+<div class="chain-pot">
+  <div class="cp"><div class="cp-name" style="color:#1db87a">ПРИВЛЕЧЕНИЕ</div><div class="cp-val" style="color:var(--green2)">+30–50%</div><div class="cp-lbl">пациентов</div></div>
+  <div class="cp"><div class="cp-name" style="color:#a78bfa">ПРОДАЖА</div><div class="cp-val" style="color:var(--purple)">+400–800К</div><div class="cp-lbl">₽/год</div></div>
+  <div class="cp"><div class="cp-name" style="color:#f59e0b">ИСПОЛНЕНИЕ</div><div class="cp-val" style="color:var(--amber)">3–5 ч/нед</div><div class="cp-lbl">свободы</div></div>
+  <div class="cp"><div class="cp-name" style="color:#2196f3">КОНТЕНТ</div><div class="cp-val" style="color:var(--blue)">−12 ч/нед</div><div class="cp-lbl">нагрузки</div></div>
+  <div class="cp"><div class="cp-name" style="color:#f87171">УДЕРЖАНИЕ</div><div class="cp-val" style="color:var(--red)">+300–700К</div><div class="cp-lbl">₽/год</div></div>
+</div>
+
+<!-- ══ БЫСТРЫЕ ПОБЕДЫ ══ -->
+<div class="qw-section">
+  <div class="sec-title">⚡ 3 БЫСТРЫЕ ПОБЕДЫ — с чего начать прямо сейчас</div>
+  <div class="qw-grid">
+
+    <div class="qw-card qw-urgent">
+      <div class="qw-week">🔥 НЕДЕЛЯ 1 — СРОЧНО</div>
+      <div class="qw-title">Запрос отзыва после курса</div>
+      <div class="qw-action">Настроить автосообщение через 7 дней после завершения курса с прямой ссылкой на 2ГИС. Сейчас 10 отзывов — у конкурента 164.</div>
+      <div class="qw-bot">
+        <div class="qw-pot">+70К ₽/мес эффект</div>
+        <div class="qw-time">3 ч настройки</div>
+      </div>
+    </div>
+
+    <div class="qw-card">
+      <div class="qw-week">🚀 НЕДЕЛЯ 2</div>
+      <div class="qw-title">Копирайтер в голосе Аллы</div>
+      <div class="qw-action">Обучить агента на 50 постах, настроить ежедневный контент-план голосом. 14 ч/нед → 2 ч/нед. Освободить время на курсы.</div>
+      <div class="qw-bot">
+        <div class="qw-pot">−12 ч/нед нагрузки</div>
+        <div class="qw-time">6 ч настройки</div>
+      </div>
+    </div>
+
+    <div class="qw-card">
+      <div class="qw-week">📈 НЕДЕЛЯ 3</div>
+      <div class="qw-title">Бот 24/7 в директе</div>
+      <div class="qw-action">Закрыть типовые вопросы ботом (стоимость, запись, анализы). Ночные обращения перестанут теряться. Администратор — только живые касания.</div>
+      <div class="qw-bot">
+        <div class="qw-pot">0 потерянных ночью</div>
+        <div class="qw-time">6 ч настройки</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="leg"><div class="leg-dot full"></div>ИИ автоматизирует полностью</div>
+  <div class="leg"><div class="leg-dot boost"></div>ИИ ускоряет, врач одобряет</div>
+  <div class="leg"><div class="leg-dot human"></div>Врач незаменим</div>
+  <div class="leg-hole">⚠ ДЫРА — не делается, деньги уходят</div>
+</div>
+
+<div class="disclaimer">⚠️ Финансовые показатели — ориентировочные прогнозы на основе данных ЦА-исследования, анализа рынка и бизнес-процессов. Точные результаты зависят от скорости внедрения и специфики рынка ДФО. | ИИщенко LAB, Март 2026</div>
+
+</div><!-- /page -->
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+<div class="modal" id="modal">
+  <div class="modal-hdr">
+    <div><div class="mbadge" id="mBadge"></div><div class="mtitle" id="mTitle"></div></div>
+    <button class="mclose" onclick="closeModal()">×</button>
+  </div>
+  <div class="mbody" id="mBody"></div>
+</div>
+</div>
+
+<script>
+/* ── CANVAS ── */
+(function(){
+  const c=document.getElementById('bg'),ctx=c.getContext('2d');
+  let W,H,nodes=[];
+  function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  function mkN(){return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28,r:Math.random()*1.8+.8,ph:Math.random()*Math.PI*2}}
+  for(let i=0;i<55;i++)nodes.push(mkN());
+  const col=['rgba(29,184,122','rgba(42,161,152','rgba(33,150,243'];
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    nodes.forEach(n=>{n.x+=n.vx;n.y+=n.vy;n.ph+=.012;if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1});
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<130){ctx.strokeStyle=`${col[i%3]},${(1-d/130)*.11})`;ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke()}
+    }
+    nodes.forEach((n,i)=>{ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);ctx.fillStyle=`${col[i%3]},${.07+Math.sin(n.ph)*.025})`;ctx.fill()});
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ── DATA ── */
+const DATA={
+a1:{ai:'full',title:'Публикует посты / Reels',chain:'ПРИВЛЕЧЕНИЕ',
+  desc:'Алла публикует 2–3 поста + 2 сторис + 1 Reels <strong>ежедневно</strong>. Тексты пишет лично ~20 мин/пост. Итого 10–14 ч/нед на контент — главный «пожиратель» времени.',
+  desc_quote:'«Только нехватка времени мешает. Тексты пишу легко — нужен агент, который будет делать это вместо меня»',
+  desc_src:'из ответов клиента',
+  um:'0 ₽',ut:'10–14 ч/нед',up:'С агентом: 1–2 ч/нед. Экономия 50+ ч/мес. +20% пациентов из Instagram',
+  ai_txt:'Генерирует пост в голосе бренда Аллы по теме дня → автопубликация. 10 постов за 30 минут вместо 10 часов.',
+  agent:'Копирайтер',agdesc:'Знает саркастичный экспертный стиль Аллы, её пациентов, кейсы. Пишет про трихологию, дерматологию, интегративную медицину.',agmod:'Модуль 02: Вирусный контент',
+  branch:'Контент-машина',bpot:'+0,5–1,5 млн ₽/год',blink:'Стабильный контент → рост аудитории → 20% пациентов из Instagram.',
+  tool:'Claude AI (Копирайтер)',tsteps:'1) Загрузить 10 файлов ДНК. 2) Настроить голос бренда. 3) Ежедневный план за 15 мин.',ttime:'6 часов',
+  goal:'2+ млн ₽/мес',gbefore:'14 ч/нед на контент. Нет времени на курсы',gafter:'2 ч/нед проверки. 12 ч свободны для образовательных продуктов',
+  links:[{color:'#2196f3',lbl:'→ Привлечение (петля)',txt:'Посты → подписчики → пациенты',sub:'Петля возврата'},{color:'#7c3aed',lbl:'← Исполнение',txt:'Кейсы до/после = материал',sub:'Информационный'}]},
+
+a2:{ai:'full',title:'2ГИС / ПроДокторов / Карты',chain:'ПРИВЛЕЧЕНИЕ',
+  desc:'На 2ГИС <strong>~10 отзывов</strong>. Конкурент Бронникова — <strong>164</strong>. При этом 70% пациентов читают отзывы перед записью к трихологу.',
+  desc_quote:'«Карточку обновила сама с ИИ — но разово»',
+  desc_src:'из исходника BizChain, разделы 1, 6',
+  um:'0 ₽',ut:'0 ч/нед (дыра)',up:'10 → 100+ отзывов = 3–5× органического трафика без рекламы',
+  ai_txt:'Мониторит отзывы → готовит ответ за 1–2 мин в голосе Аллы. Обновляет описание под трендовые запросы.',
+  agent:'Менеджер удержания',agdesc:'Мониторит 2ГИС, ПроДокторов, Google. Готовит персональные ответы. Отправляет запросы отзыва.',agmod:'Модуль 04: Удержание',
+  branch:'Репутация / отзывы',bpot:'+0,7–1,5 млн ₽/год',blink:'10 → 164 отзыва за 6 мес = топ поиска в Благовещенске.',
+  tool:'Claude AI + бот',tsteps:'1) Подключить мониторинг. 2) Шаблоны ответов в стиле Аллы. 3) Автозапрос через 7 дней.',ttime:'3 часа',
+  goal:'30+ пациентов/нед',gbefore:'10 отзывов. Не в топе поиска',gafter:'164+ отзывов. №1 трихолог Благовещенска',
+  links:[{color:'#f97316',lbl:'← Удержание',txt:'Завершение курса → запрос отзыва',sub:'Триггерный'},{color:'#2196f3',lbl:'→ Привлечение',txt:'Отзывы → доверие → новые пациенты',sub:'Петля'}]},
+
+a3:{ai:'full',title:'Директ-запросы 24/7',chain:'ПРИВЛЕЧЕНИЕ',
+  desc:'Все обращения обрабатывает администратор. Время ответа 5 мин–1 час. <strong>Ночные обращения остаются без ответа</strong> — пациенты уходят к конкурентам.',
+  desc_src:'из описания бизнес-процессов',
+  um:'~15 000 ₽/мес зарплата (30 ч/нед переписки)',ut:'30 ч/нед администратора',up:'Бот закрывает 70% типового. Администратор — только сложные',
+  ai_txt:'Бот отвечает на FAQ 24/7. Нетипичное → передаёт администратору с пометкой.',
+  agent:'Архитектор воронок',agdesc:'Настраивает автоответчик. Ведёт первичную квалификацию: профиль пациента, приоритет обращения.',agmod:'Модуль 03: Воронки',
+  branch:'CRM + Онлайн-запись',bpot:'+0,4–0,8 млн ₽/год',blink:'0 пропущенных ночью. Экономия 15–20 ч/нед администратора.',
+  tool:'Claude AI + Telegram-бот',tsteps:'1) Собрать FAQ 50 вопросов. 2) Настроить бота. 3) Подключить к директу.',ttime:'6 часов',
+  goal:'30+ пациентов/нед',gbefore:'Ночью нет ответа. 30 ч/нед переписки',gafter:'24/7 автоответ. 0 потерянных обращений',
+  links:[{color:'#7c3aed',lbl:'→ Продажа',txt:'Квалифицированный лид → запись',sub:'Триггерный'},{color:'#1db87a',lbl:'← Контент',txt:'Пост → вопрос в директ',sub:'Информационный'}]},
+
+a4:{ai:'boost',title:'Квалификация пациента',chain:'ПРИВЛЕЧЕНИЕ',
+  desc:'Квалификацию ведёт администратор — хорошо чувствует. Около <strong>30% уходят на «дорого»</strong> ещё до записи. Рассрочек и пакетов нет.',
+  desc_quote:'«Около 30% сразу говорят "дорого" — просто уходят к дешёвым конкурентам»',
+  desc_src:'из описания бизнес-процессов',
+  um:'~50–150К ₽/мес потерь на отказавших',ut:'~2 ч/нед на неподходящих',up:'Скрипт + вводный продукт 590 ₽ = +10–15% конверсии',
+  ai_txt:'ИИ создаёт скрипт: «дорого» → объяснение ценности → вводный продукт за 590 ₽ → путь к основному.',
+  agent:'Архитектор воронок',agdesc:'Разрабатывает скрипты квалификации. Настраивает воронку прогрева для сомневающихся.',agmod:'Модуль 03: Воронки',
+  branch:'Конверсия',bpot:'+0,4–0,8 млн ₽/год',blink:'Скрипт + вводный продукт конвертируют «дорого» в «попробую».',
+  tool:'Claude AI + скрипты',tsteps:'1) Скрипт отработки возражений. 2) Вводный продукт. 3) Обучить администратора.',ttime:'4 часа',
+  goal:'30+ пациентов/нед',gbefore:'30% уходят без шанса',gafter:'Скрипт + вводный продукт удерживают часть',
+  links:[{color:'#0d9488',lbl:'→ Продажа',txt:'Лид → запись',sub:'Триггерный'}]},
+
+a5:{ai:'boost',title:'Прогрев-воронка (ДЫРА)',chain:'ПРИВЛЕЧЕНИЕ',
+  desc:'<strong>Дыра.</strong> Лид-магниты работают — гайды скачивают. Но цепочки «скачал → прогрелся → купил» нет. Каждый скачавший = потеря конверсии.',
+  desc_quote:'«Воронка после лид-магнита не доведена до продажи»',
+  desc_src:'из исходника BizChain',
+  um:'0 ч/нед (не делается)',ut:'0 ч/нед',up:'Автоворонка: скачал → 5 касаний → запись = +15–20% конверсии',
+  ai_txt:'Скачал гайд → через 1 день полезное → через 3 дня кейс → через 7 дней оффер консультации.',
+  agent:'Архитектор воронок',agdesc:'Строит автоворонку: лид-магнит → прогрев → оффер. В голосе Аллы.',agmod:'Модуль 03: Воронки',
+  branch:'Контент-машина + CRM',bpot:'+0,5–1,5 млн ₽/год',blink:'Каждый скачавший = потенциальный пациент. Воронка конвертирует без Аллы.',
+  tool:'Telegram-бот + Claude AI',tsteps:'1) 5 прогревочных сообщений. 2) Настроить бота. 3) Подключить к лид-магниту.',ttime:'8 часов',
+  goal:'30+ пациентов/нед',gbefore:'Гайд скачали — дальше тишина',gafter:'Воронка доводит до записи за 7–14 дней',
+  links:[{color:'#7c3aed',lbl:'→ Продажа',txt:'Прогретый лид → запись',sub:'Триггерный'}]},
+
+b1:{ai:'full',title:'Входящий запрос',chain:'ПРОДАЖА',
+  desc:'Все входящие обрабатывает администратор. Типовые вопросы о стоимости и условиях — до 80% переписки.',
+  um:'30 ч/нед администратора',ut:'30 ч/нед',up:'Бот закрывает 70% типового. Администратор: 8–10 ч/нед',
+  ai_txt:'Бот: стоимость, условия, запись, анализы. Ночью — не молчит. Горячий → передаёт администратору.',
+  agent:'Архитектор воронок',agdesc:'Настраивает автоответы и квалификацию.',agmod:'Модуль 03: Воронки',
+  branch:'CRM + Онлайн-запись',bpot:'+0,4–0,8 млн ₽/год',blink:'0 пропущенных ночью. Администратор свободен.',
+  tool:'Claude AI + Telegram-бот',tsteps:'1) FAQ 50 вопросов. 2) Бот. 3) Расписание.',ttime:'6 часов',
+  goal:'30+ пациентов/нед',gbefore:'Ночью нет ответа. 30 ч/нед переписки',gafter:'24/7 автоответ. Администратор для сложных',
+  links:[{color:'#0d9488',lbl:'→ Запись',txt:'Запрос → слот в расписании',sub:'Триггерный'}]},
+
+b2:{ai:'boost',title:'Работа с возражением «дорого»',chain:'ПРОДАЖА',
+  desc:'<strong>~30% пациентов уходят</strong> на обсуждении цены. Рассрочек нет, пакетов нет. Администратор работает по интуиции.',
+  desc_quote:'«30% говорят "дорого" — просто уходят к дешёвым конкурентам»',
+  um:'~50–150К ₽/мес потерь',ut:'~2 ч/нед',up:'Скрипт + вводный продукт → конвертация части "ушедших"',
+  ai_txt:'«Дорого» → объяснение системного подхода → вводный продукт 590 ₽ → путь к основному приёму.',
+  agent:'Создатель посадочных',agdesc:'Разрабатывает скрипты ценности. Готовит ответы на возражения.',agmod:'Модуль 04',
+  branch:'Конверсия',bpot:'+0,4–0,8 млн ₽/год',blink:'+5–10 пациентов/мес × курс 6 мес.',
+  tool:'Claude AI + скрипты',tsteps:'1) 3 ответа на «дорого». 2) Вводный продукт. 3) Обучить администратора.',ttime:'4 часа',
+  goal:'30+ пациентов/нед',gbefore:'30% уходят без шанса',gafter:'Скрипт удерживает часть на вводный продукт',
+  links:[{color:'#0d9488',lbl:'→ Запись',txt:'Согласие → слот',sub:'Триггерный'}]},
+
+b3:{ai:'full',title:'Онлайн-запись (ДЫРА)',chain:'ПРОДАЖА',
+  desc:'<strong>Дыра.</strong> Онлайн-записи нет. Всё через переписку, ведётся ежедневник. Ночные обращения теряются.',
+  desc_quote:'«Онлайн-записи нет. Хотелось бы оцифровать»',
+  um:'0 ч/нед (не существует)',ut:'Дыра',up:'CRM: администратор экономит 15–20 ч/нед. Записи ночью.',
+  ai_txt:'Бот показывает свободные слоты → фиксирует в CRM → уведомляет администратора.',
+  agent:'Архитектор воронок',agdesc:'Настраивает интеграцию бота с расписанием.',agmod:'Модуль 03',
+  branch:'CRM + Онлайн-запись',bpot:'+0,4–0,8 млн ₽/год',blink:'0 потерянных ночных обращений.',
+  tool:'MedMe + Claude',tsteps:'1) Выбрать CRM. 2) Подключить запись. 3) Интегрировать с ботом.',ttime:'8–10 часов',
+  goal:'30+ пациентов/нед',gbefore:'Ночью никто не записывается',gafter:'24/7 запись. CRM ведёт историю',
+  links:[{color:'#f59e0b',lbl:'→ Исполнение',txt:'Запись → карточка пациента',sub:'Триггерный'}]},
+
+b4:{ai:'full',title:'Напоминание о визите',chain:'ПРОДАЖА',
+  um:'0 ₽',ut:'~1 ч/нед (несистемно)',up:'Автонапоминания снижают no-show на 30–40%',
+  ai_txt:'За 24 ч до визита → автосообщение с адресом, временем, советами по подготовке.',
+  agent:'Менеджер удержания',agdesc:'Напоминания за 24 ч и 1 ч. Советы по подготовке к трихологическому приёму.',agmod:'Модуль 04',
+  branch:'CRM + Онлайн-запись',bpot:'+0,4–0,8 млн ₽/год',blink:'–30–40% no-show = каждый визит сохранён.',
+  tool:'Telegram-бот + CRM',tsteps:'1) Подключить к CRM. 2) Триггеры 24 ч и 1 ч. 3) Тексты в стиле Аллы.',ttime:'2 часа',
+  goal:'30+ пациентов/нед',gbefore:'Несистемные напоминания. Часть не приходит',gafter:'Автоматические. Меньше пропусков',
+  links:[{color:'#f59e0b',lbl:'→ Исполнение',txt:'Пациент готов и пришёл',sub:'Триггерный'}]},
+
+b5:{ai:'human',title:'Оплата / первый визит',chain:'ПРОДАЖА',
+  desc:'Первый визит — живое взаимодействие. Алла работает в премиум-сегменте. Именно первый контакт формирует доверие на 6–12 месяцев лечения.',
+  um:'Основной доход',ut:'1 ч – 1 ч 10 мин / приём',up:'ИИ готовит данные ДО. После → CRM автоматически.',
+  ai_txt:'Аналитик готовит краткую справку по пациенту ДО встречи. После оплаты → CRM обновляет карточку.',
+  agent:'Аналитик-оптимизатор',agdesc:'Данные ДО встречи. Фиксирует ПОСЛЕ. Мета-уровень.',agmod:'Модуль 03–04',
+  branch:'— красная зона',bpot:'Это ядро бизнеса',blink:'Оптимизируем всё вокруг, чтобы Алла больше времени тратила здесь.',
+  tool:'Аналитик (подготовка)',tsteps:'1) Сводка перед приёмом. 2) Алла принимает. 3) CRM автообновление.',ttime:'3 часа',
+  goal:'2+ млн ₽/мес',gbefore:'Алла готовится сама — тратит время',gafter:'ИИ подготовил → сразу в работу',
+  links:[{color:'#0d9488',lbl:'→ Исполнение',txt:'Оплата → план лечения',sub:'Триггерный'}]},
+
+c1:{ai:'human',title:'Первичный приём / анамнез',chain:'ИСПОЛНЕНИЕ',
+  desc:'1 ч – 1 ч 10 мин. Сбор анамнеза, трихоскопия, разбор анализов. 15+ лет экспертизы — за это платит пациент.',
+  um:'Основной доход: 3 500–7 500 ₽/приём',ut:'~20 ч/нед',up:'ИИ помогает ДО (подготовка) и ПОСЛЕ (документация)',
+  ai_txt:'Аналитик готовит сводку перед приёмом. После — помогает с документацией. Биоимпеданс уже автоматизирован.',
+  agent:'Аналитик-оптимизатор',agdesc:'Подготовка + постобработка. Документация, заключения. Алла — уникальное суждение.',agmod:'Модуль 03–04',
+  branch:'— красная зона',bpot:'Ядро дохода',blink:'Освобождаем время вокруг этого звена.',
+  tool:'Аналитик (ДО и ПОСЛЕ)',tsteps:'1) Сводка по пациенту. 2) Приём. 3) Документация с ИИ.',ttime:'Уже работает частично',
+  goal:'30+ пациентов/нед',gbefore:'30 мин/приём на документацию вручную',gafter:'ИИ черновик → Алла на 15 мин/приём свободнее',
+  links:[{color:'#fbbf24',lbl:'→ Биоимпеданс',txt:'Анамнез → сканирование',sub:'Информационный'}]},
+
+c2:{ai:'full',title:'Биоимпеданс-заключение (УЖЕ РАБОТАЕТ!)',chain:'ИСПОЛНЕНИЕ',
+  desc:'<strong>Уже автоматизировано!</strong> Загружает МИДАС-скан → ИИ выдаёт 10–15 листов заключения с рекомендациями. Обучила за 2 дня. Пациенты «в восторге».',
+  desc_quote:'«Я загружаю картинку — он выдаёт заключение. Пациенты в восторге. Делала сама, 2 дня на обучение»',
+  um:'0 ₽ — создан сам',ut:'0 ч/нед (автоматизировано)',up:'Шаблон для создания других агентов + кейс для курса',
+  ai_txt:'Загружает МИДАС-скан → 10–15 листов: питание, нутриенты, рекомендации. Без Аллы.',
+  agent:'Аналитик-оптимизатор',agdesc:'Уже создан и работает! Шаблон для похожих агентов.',agmod:'Уже работает',
+  branch:'Удержание / LTV',bpot:'Лояльность пациентов',blink:'Уникальный инструмент без аналогов у конкурентов.',
+  tool:'Claude AI (личный агент)',tsteps:'Уже готово! Задокументировать → использовать как кейс для курса.',ttime:'Готово',
+  goal:'2+ млн ₽/мес',gbefore:'Заключение вручную — часы',gafter:'10 секунд → 15 листов рекомендаций',
+  links:[]},
+
+c3:{ai:'human',title:'Диагноз и план лечения',chain:'ИСПОЛНЕНИЕ',
+  desc:'Разработка плана лечения — исключительно Алла. 15+ лет, системная трихология. Это уникальная ценность.',
+  um:'Входит в стоимость первичного',ut:'~40 мин / пациент',up:'ИИ данные → Алла быстрее решает',
+  ai_txt:'Аналитик структурирует анализы + биоимпеданс + историю. Алла принимает решение быстрее.',
+  agent:'Аналитик-оптимизатор',agdesc:'Собирает данные → структурирует → Алла принимает решение быстрее.',agmod:'Модуль 03–04',
+  branch:'— красная зона',bpot:'Авторская экспертиза',blink:'«Системная трихология» — не автоматизируется. Именно за это платят.',
+  tool:'Аналитик (подготовка)',tsteps:'1) Сводка данных. 2) Алла решает. 3) ИИ документирует.',ttime:'Работает параллельно',
+  goal:'30+ пациентов/нед',gbefore:'Алла собирает данные из разных источников',gafter:'Аналитик подготовил → только решение',
+  links:[]},
+
+c4:{ai:'human',title:'Процедуры и лечение',chain:'ИСПОЛНЕНИЕ',
+  desc:'Сами процедуры — только Алла. Инъекции, аппаратные. Курс 6–12 мес. <strong>80% возвращаются</strong>.',
+  um:'Основной доход',ut:'Включено в 20 ч/нед',up:'ИИ напоминает о съёмке ПОСЛЕ. Каждый результат = контент',
+  ai_txt:'После процедуры → Ген Агент напоминает сделать фото. Один результат → 3–4 единицы контента.',
+  agent:'Генеральный агент',agdesc:'Напоминает о фотофиксации. Один результат → пост, карусель, Reels, сторис.',agmod:'Модуль 02',
+  branch:'— красная зона',bpot:'Экспертиза — не трогаем',blink:'Оптимизируем вокруг: съёмку, документацию, напоминания.',
+  tool:'Ген Агент (напоминание)',tsteps:'1) Напоминание о фото. 2) Авторгенерация поста из фото.',ttime:'2 часа',
+  goal:'2+ млн ₽/мес',gbefore:'Фото есть, контент не создаётся',gafter:'Каждый результат → пост + Reels автоматически',
+  links:[{color:'#7c3aed',lbl:'→ Контент (ключевой)',txt:'Фото до/после → посты и Reels',sub:'Информационный'}]},
+
+c5:{ai:'boost',title:'Медицинская документация',chain:'ИСПОЛНЕНИЕ',
+  desc:'~30 мин / пациент на документацию. Шаблоны есть, каждый раз правятся вручную. CRM нет.',
+  um:'Входит в время приёма',ut:'~30 мин/пациент',up:'С ИИ: 5–7 мин/пациент. Экономия 3–4 ч/нед',
+  ai_txt:'Аналитик генерирует черновик → Алла проверяет 5 мин.',
+  agent:'Аналитик-оптимизатор',agdesc:'Черновики документов по шаблону. Алла проверяет и подписывает.',agmod:'Модуль 03–04',
+  branch:'Автоматизация / CRM',bpot:'+150 ч/год свободного времени',blink:'3 ч/нед × 50 нед = 150 ч/год → на курсы и книгу.',
+  tool:'Claude AI + шаблоны',tsteps:'1) Шаблоны документов. 2) Заполнение по данным приёма. 3) Алла 5 мин.',ttime:'4 часа',
+  goal:'2+ млн ₽/мес',gbefore:'30 мин документация вручную',gafter:'7 мин: ИИ черновик → подписала',
+  links:[]},
+
+d1:{ai:'boost',title:'Контент-план',chain:'КОНТЕНТ',
+  desc:'Темы выбирает Алла сама. Каждый месяц заново. Системы нет.',
+  um:'~2 ч/мес',ut:'2 ч/мес',up:'Ген Агент: план на 30 дней за 15 мин голосом',
+  ai_txt:'Анализирует тренды + сезонность + вопросы пациентов → 30-дневный план. Алла одобряет за 10 мин.',
+  agent:'Генеральный агент',agdesc:'Мониторит тренды трихологии. Формирует план с сезонностью.',agmod:'Модуль 02',
+  branch:'Контент-машина',bpot:'+0,5–1,5 млн ₽/год',blink:'Системный план → регулярность → стабильный поток.',
+  tool:'Claude AI (Ген Агент)',tsteps:'1) Загрузить список тем. 2) Сезонный календарь. 3) Ежемесячная сессия 15 мин.',ttime:'2 часа',
+  goal:'2+ млн ₽/мес',gbefore:'Темы по настроению',gafter:'30-дневный план за 15 мин',
+  links:[]},
+
+d2:{ai:'full',title:'Пишет посты Telegram / Instagram',chain:'КОНТЕНТ',
+  desc:'Все посты — лично, ~20 мин/пост. <strong>10–14 ч/нед</strong> на тексты.',
+  desc_quote:'«Только нехватка времени. Тексты пишу легко — нужен кто-то вместо меня»',
+  um:'0 ₽',ut:'10–14 ч/нед (главный пожиратель)',up:'С агентом: 1–2 ч/нед. Экономия 50 ч/мес',
+  ai_txt:'Тема + 2–3 тезиса голосом → пост в саркастичном экспертном стиле → Алла одобряет 2 мин.',
+  agent:'Копирайтер',agdesc:'Знает голос: саркастичный, экспертный. Трихология, дерматология, интегративная медицина.',agmod:'Модуль 02',
+  branch:'Контент-машина',bpot:'+0,5–1,5 млн ₽/год',blink:'50 ч/мес → 2 ч/мес. Остальное — на курсы.',
+  tool:'Claude AI (Копирайтер)',tsteps:'1) Обучить на 50+ постах. 2) Настроить голос. 3) Тема → пост за 3 мин.',ttime:'6 часов',
+  goal:'2+ млн ₽/мес',gbefore:'14 ч/нед контент. Нет времени на курсы',gafter:'2 ч/нед проверки. 12 ч → образовательные продукты',
+  links:[{color:'#1db87a',lbl:'→ Привлечение',txt:'Пост → подписчики → пациенты',sub:'Петля'}]},
+
+d3:{ai:'boost',title:'Сценарий Reels',chain:'КОНТЕНТ',
+  desc:'Reels ежедневно. Съёмка ~1,5 ч. <strong>Главная боль: продающие сценарии</strong> — «не в органике».',
+  desc_quote:'«Нужны сценарии в моей органике, а не заученные фразы»',
+  um:'~3–5К ₽/мес на монтаж',ut:'1,5–3 ч/Reels',up:'Сценарий в стиле Аллы за 10 мин вместо 2 часов',
+  ai_txt:'Копирайтер: крючок → экспертная провокация → полезность → CTA. В подаче Аллы.',
+  agent:'Копирайтер',agdesc:'Короткие вовлекающие сценарии. Страхи аудитории, кейсы, стиль подачи.',agmod:'Модуль 02',
+  branch:'Контент-машина + Медийный бренд',bpot:'+0,5–1,5 млн ₽/год',blink:'Один вирусный Reels = 50–500К показов.',
+  tool:'Claude AI (Копирайтер)',tsteps:'1) Обучить на успешных Reels. 2) Тема → сценарий за 10 мин.',ttime:'4 часа',
+  goal:'2+ млн ₽/мес',gbefore:'Сценарии выматывают. 2 ч на Reels',gafter:'Сценарий за 10 мин. Алла снимает',
+  links:[]},
+
+d4:{ai:'boost',title:'Статьи для медпорталов',chain:'КОНТЕНТ',
+  desc:'Минимум <strong>3 статьи в месяц</strong>. Пишет сама. 2–4 ч/мес.',
+  um:'0 ₽',ut:'2–4 ч/мес',up:'Копирайтер черновик → Алла редактирует. Экономия 1–2 ч/мес',
+  ai_txt:'Копирайтер пишет с медицинскими ссылками → Алла проверяет факты → 30 мин вместо 1,5 ч.',
+  agent:'Копирайтер',agdesc:'Медицинские тексты с научной базой. Строго черновик — Алла всегда проверяет.',agmod:'Модуль 02',
+  branch:'Медийный бренд',bpot:'+1–4 млн ₽/год долгосрочно',blink:'3 статьи × 12 мес = 36 статей. Федеральная экспертность.',
+  tool:'Claude AI (Копирайтер)',tsteps:'1) Шаблон структуры. 2) Тема → черновик. 3) Алла проверяет 20 мин.',ttime:'2 часа',
+  goal:'Федеральный бренд',gbefore:'2 часа на статью. Пишет сама',gafter:'30 мин: черновик → проверка фактов',
+  links:[]},
+
+d5:{ai:'boost',title:'Подкаст / YouTube (ДЫРА)',chain:'КОНТЕНТ',
+  desc:'<strong>Дыра.</strong> Подкаст запускается. YouTube отсутствует. Ниша трихолога на YouTube в России <strong>пустует</strong>.',
+  desc_quote:'«YouTube — нет пока. Хочу делать подкаст регулярно»',
+  um:'7 000 ₽/выпуск (студия + монтаж)',ut:'0 ч/нед (не делается)',up:'1 выступление → 10 единиц контента',
+  ai_txt:'Ген Агент готовит сценарий за 10 мин. После записи — нарезает цитаты, карусели, описание.',
+  agent:'Генеральный агент',agdesc:'Сценарии подкаста. Из выпуска — 10 единиц: цитаты, карусели, Reels, пост-анонс.',agmod:'Модуль 02',
+  branch:'Медийный бренд',bpot:'+1–4 млн ₽/год',blink:'Регулярный подкаст → спонсоры → YouTube → федеральная позиция.',
+  tool:'Claude AI (Ген Агент)',tsteps:'1) Тема → сценарий 10 мин. 2) Запись. 3) Нарезка на 10 единиц.',ttime:'2 часа',
+  goal:'Федеральный бренд',gbefore:'Подкаст нерегулярный. YouTube нет',gafter:'1 выпуск/нед. 10 единиц контента',
+  links:[]},
+
+e1:{ai:'full',title:'Запрос отзыва (КЛЮЧЕВАЯ ДЫРА)',chain:'УДЕРЖАНИЕ',
+  desc:'<strong>Главная дыра.</strong> «Не прошу системно. Сбора нет». 10 отзывов на 2ГИС. Конкурент — 164. 70% пациентов читают отзывы перед записью.',
+  desc_quote:'«Сбора нет — это зона роста. Пациенты без просьбы оставляют редко»',
+  um:'0 ч/нед (не делается)',ut:'ДЫРА',up:'10 → 100+ отзывов за 3–6 мес = 3–5× трафика',
+  ai_txt:'Через 7 дней → персональное сообщение с прямой ссылкой. Через 14 дней — мягкое напоминание.',
+  agent:'Менеджер удержания',agdesc:'Автоматически отправляет запрос. Персональный. Знает имя и длительность курса.',agmod:'Модуль 04',
+  branch:'Репутация / отзывы',bpot:'+0,7–1,5 млн ₽/год',blink:'10 → 164 за 6 мес = топ поиска 2ГИС.',
+  tool:'Telegram-бот + Claude',tsteps:'1) Триггер через 7 дней. 2) Персональный шаблон. 3) Ссылка на платформы.',ttime:'3 часа — старт за 1 неделю',
+  goal:'30+ пациентов/нед',gbefore:'10 отзывов. Не в топе поиска',gafter:'100+ за 6 мес. №1 трихолог Благовещенска',
+  links:[{color:'#d97706',lbl:'← Исполнение',txt:'Завершение курса → триггер',sub:'Триггерный'},{color:'#f97316',lbl:'→ Привлечение',txt:'Отзывы → новые пациенты',sub:'Петля'}]},
+
+e2:{ai:'full',title:'Рассылка по базе (ДЫРА)',chain:'УДЕРЖАНИЕ',
+  desc:'<strong>Дыра.</strong> База контактов <strong>есть</strong>. Рассылок нет совсем. «Хотелось бы настроить — мешает техническая сложность».',
+  desc_quote:'«База есть. Рассылок нет — ни email, ни мессенджеры»',
+  um:'0 ч/нед (дыра)',ut:'ДЫРА',up:'Сезонная рассылка × база = +300–700К ₽/год',
+  ai_txt:'Сезонная рассылка (выпадение осенью, профилактика зимой). «Алла, прошло 6 мес с вашего визита».',
+  agent:'Менеджер удержания',agdesc:'Ведёт базу. Сезонные и персональные рассылки. В голосе Аллы.',agmod:'Модуль 04',
+  branch:'Удержание / LTV',bpot:'+300–700К ₽/год',blink:'База — спящий актив. Одна рассылка = возврат 10–20% базы.',
+  tool:'Senler + Claude',tsteps:'1) База с согласиями в CRM. 2) Сегментация. 3) Сезонные рассылки 1–2 раза/мес.',ttime:'8 часов',
+  goal:'2+ млн ₽/мес',gbefore:'База есть, инструмент не используется',gafter:'Ежемесячные рассылки → возврат',
+  links:[]},
+
+e3:{ai:'full',title:'Напоминание о контрольном визите',chain:'УДЕРЖАНИЕ',
+  desc:'Напоминает администратор несистемно. Часть пациентов «выпадает» до конца курса.',
+  um:'0 ₽',ut:'~1 ч/нед',up:'Автонапоминание → –30% выпавших до конца курса',
+  ai_txt:'30 дней с последнего визита → «Время контрольного осмотра» + ссылка на запись.',
+  agent:'Менеджер удержания',agdesc:'Следит за датами. За 7 и 3 дня. В голосе Аллы.',agmod:'Модуль 04',
+  branch:'Удержание / LTV',bpot:'+300–700К ₽/год',blink:'80% возвращаемость → 100% при автонапоминаниях.',
+  tool:'CRM + бот',tsteps:'1) Дата следующего в CRM. 2) Автосообщение за 7 и 3 дня. 3) Ссылка на запись.',ttime:'2 часа',
+  goal:'30+ пациентов/нед',gbefore:'Несистемно. Часть выпадает из курса',gafter:'Автонапоминания → все доходят до конца',
+  links:[]},
+
+e4:{ai:'boost',title:'Допродажа / курсы пациентам',chain:'УДЕРЖАНИЕ',
+  desc:'Рекомендации препаратов — на каждом приёме. Но образовательных продуктов для пациентов нет. Это готовый рынок — они уже лояльны.',
+  um:'0 ₽ от образовательных продуктов',ut:'~1 ч/нед',up:'Курс 1 990 ₽ × база = +500К–1 млн ₽/год',
+  ai_txt:'После завершения лечения → оффер гайда/курса по уходу. Персонализировано под диагноз.',
+  agent:'Менеджер удержания + Создатель посадочных',agdesc:'Серия писем с допродажей. Посадочная страница курса.',agmod:'Модуль 04',
+  branch:'Онлайн-образование',bpot:'+0,5–2 млн ₽/год',blink:'Пациенты — уже лояльная аудитория. Конверсия в курс выше.',
+  tool:'Claude AI + бот',tsteps:'1) Гайд «Уход после лечения». 2) Допродажа в боте. 3) Цена 990–1990 ₽.',ttime:'8 часов',
+  goal:'2+ млн ₽/мес',gbefore:'Пациенты уходят — продукта нет',gafter:'Завершили лечение → покупают курс',
+  links:[]},
+
+e5:{ai:'boost',title:'Программа рекомендаций (ДЫРА)',chain:'УДЕРЖАНИЕ',
+  desc:'<strong>Дыра.</strong> Сарафан — <strong>40% пациентов</strong>. Программы стимулирования нет. Нет «Приведи подругу».',
+  desc_quote:'«Пациенты рекомендуют и так — но системы нет»',
+  um:'0 ₽',ut:'0 ч/нед',up:'Система = +20–30% к самому сильному каналу',
+  ai_txt:'Через 30 дней: «Поделитесь ссылкой — подруга получит скидку 500 ₽, вы — бонус».',
+  agent:'Менеджер удержания',agdesc:'Механика реферальной программы. Автоматически отправляет ссылку.',agmod:'Модуль 04',
+  branch:'Репутация + Привлечение',bpot:'+20–30% к сарафанному каналу',blink:'Сарафан 40% → система усилит до 50–55%.',
+  tool:'Claude AI + бот',tsteps:'1) Механика «Приведи подругу». 2) Реферальные ссылки. 3) Автосообщение через 30 дней.',ttime:'5 часов',
+  goal:'30+ пациентов/нед',gbefore:'Рекомендации стихийны',gafter:'+20% к входящему потоку',
+  links:[{color:'#f97316',lbl:'→ Привлечение',txt:'Рекомендация → новый пациент',sub:'Петля сарафана'}]}
+};
+
+const CONNS={
+c12:{color:'#0d9488',title:'Продажа → Исполнение',desc:'После оплаты → CRM автоматически создаёт карточку пациента → Алла видит запись → пациент получает инструкцию по подготовке к приёму.<br><br>Сейчас: ежедневник + ручное согласование. Потенциал: автозапуск при оплате.'},
+c23:{color:'#7c3aed',title:'Исполнение → Контент (ключевой переход)',desc:'Каждый результат лечения = материал. Фото до/после → ИИ создаёт пост, карусель, Reels, сторис.<br><br>Сейчас: фото хранятся, контент нерегулярно. Потенциал: 1 сессия = 4 единицы без Аллы.'},
+c24:{color:'#d97706',title:'Исполнение → Удержание',desc:'Завершение курса → автоматически: через 7 дней запрос отзыва, через 30 дней напоминание о контрольном, через 3 месяца сезонный оффер.<br><br>Сейчас: несистемно. Потенциал: полный автопилот.'},
+c31:{color:'#2196f3',title:'Контент → Привлечение (петля)',desc:'Публикации → новые подписчики → обращения → пациенты.<br><br>Работает: 20% пациентов через Instagram. Слабое место: нет воронки после подписки.'},
+c41:{color:'#f97316',title:'Удержание → Привлечение (сарафан)',desc:'Довольный пациент рекомендует → новый человек.<br><br>Работает: 40% через сарафан — самый сильный канал. Дыра: нет «Приведи подругу». Система = управляемый рост.'},
+c_union:{color:'#ec4899',title:'Ассоциация «Юнион» → Привлечение',desc:'Коллеги-члены направляют пациентов к Алле как главному трихологу региона.<br><br>30% пациентов через рекомендации коллег. Канал не отслеживается. Потенциал: каждый новый член «Юнион» = источник направлений.'}
+};
+
+const L={full:'🟢 ИИ делает сам',boost:'🟡 ИИ ускоряет ×5–10',human:'🔴 Врач незаменим'};
+const AT={full:'⚡ Что делает ИИ',boost:'⚡ Как ИИ ускоряет',human:'👤 Роль врача'};
+
+function openModal(k){
+  const s=DATA[k];if(!s)return;
+  document.getElementById('mBadge').className=`mbadge ${s.ai}`;
+  document.getElementById('mBadge').textContent=L[s.ai];
+  document.getElementById('mTitle').textContent=s.title;
+  let h=`<div class="mchain">Цепочка: <b>${s.chain}</b></div>`;
+  h+=`<div class="mdesc">${s.desc||''}</div>`;
+  if(s.desc_quote)h+=`<div class="mquote">${s.desc_quote}</div>`;
+  if(s.desc_src)h+=`<div class="msrc">📋 ${s.desc_src}</div>`;
+  if(s.um||s.ut){
+    h+=`<div class="msec">📊 Юнит-экономика</div><div class="munit">`;
+    if(s.um)h+=`<div class="mu-row"><span>💰</span>${s.um}</div>`;
+    if(s.ut)h+=`<div class="mu-row"><span>⏱</span>${s.ut}</div>`;
+    if(s.up)h+=`<div class="mu-row hi"><span>📈</span>${s.up}</div>`;
+    h+=`</div>`;
+  }
+  h+=`<div class="msec">${AT[s.ai]}</div><div class="mai ${s.ai}"><div class="mai-t">${L[s.ai]}</div><div class="mai-txt">${s.ai_txt}</div></div>`;
+  if(s.agent)h+=`<div class="msec">🤖 Ответственный агент</div><div class="magent"><div class="magent-name">${s.agent}</div><div class="magent-desc">${s.agdesc}</div><div class="magent-mod">${s.agmod}</div></div>`;
+  if(s.branch)h+=`<div class="msec">🚀 Ветка роста</div><div class="mbranch"><div class="mbranch-name">${s.branch}</div><div class="mbranch-pot">₽-потенциал: <b>${s.bpot}</b></div><div class="mbranch-link">${s.blink}</div></div>`;
+  if(s.tool)h+=`<div class="msec">🛠 Рекомендация</div><div class="mtool"><div class="mtool-name">${s.tool}</div><div class="mtool-steps">${s.tsteps}</div><div class="mtool-time">⏱ ${s.ttime}</div></div>`;
+  if(s.goal)h+=`<div class="msec">🎯 Связь с целью</div><div class="mgoal"><div class="mgoal-name">Цель: ${s.goal}</div><div class="mgoal-grid"><div class="mgoal-b"><div class="mgoal-lbl">Без ИИ</div>${s.gbefore}</div><div class="mgoal-a"><div class="mgoal-lbl">С ИИ</div>${s.gafter}</div></div></div>`;
+  if(s.links&&s.links.length){
+    h+=`<div class="msec">⚡ Связи с другими звеньями</div><div class="mlinks">`;
+    s.links.forEach(l=>h+=`<div class="ml"><div class="ml-dot" style="background:${l.color}"></div><div><div class="ml-lbl" style="color:${l.color}">${l.lbl}</div><div>${l.txt}</div><div class="ml-sub">${l.sub}</div></div></div>`);
+    h+=`</div>`;
+  }
+  document.getElementById('mBody').innerHTML=h;
+  document.getElementById('overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+function openConnModal(k){
+  const c=CONNS[k];if(!c)return;
+  const b=document.getElementById('mBadge');
+  b.className='mbadge boost';b.style.background=c.color+'18';b.style.color=c.color;b.textContent='⚡ Переплетение';
+  document.getElementById('mTitle').textContent=c.title;
+  document.getElementById('mBody').innerHTML=`<div class="mdesc" style="margin-top:14px">${c.desc}</div>`;
+  document.getElementById('overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show');
+  document.body.style.overflow='';
+  document.getElementById('mBadge').style='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+</script>
+</body>
+</html>
